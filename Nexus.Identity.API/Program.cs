@@ -1,0 +1,51 @@
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Nexus.Identity.API.Constants;
+using Nexus.Identity.API.Data;
+using Nexus.Identity.API.Features.Registration;
+using Nexus.Identity.API.Infrastructure.Middleware;
+using Nexus.Shared.Utilities;
+using Scalar.AspNetCore;
+using System.Reflection;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
+
+// Database
+builder.AddNpgsqlDbContext<AppDbContext>("IdentityDb", settings =>
+{
+    settings.DisableRetry = false;
+});
+
+builder.Services.AddOpenApi();
+
+// MediatR & FluentValidation
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+//SnowFlake ID Generator
+builder.Services.AddSingleton<SnowFlakeIdGenerator>(
+    _ => new SnowFlakeIdGenerator(ServerConstants.ServerId)
+);
+
+var app = builder.Build();
+app.MapDefaultEndpoints();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    // Scalar API Reference
+    app.MapScalarApiReference();
+}
+app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseHttpsRedirection();
+app.MapRegisterUserEndPoint();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+app.Run();
