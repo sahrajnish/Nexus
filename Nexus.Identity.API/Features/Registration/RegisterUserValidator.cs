@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Nexus.Identity.API.Constants;
 
 namespace Nexus.Identity.API.Features.Registration
 {
@@ -9,7 +10,7 @@ namespace Nexus.Identity.API.Features.Registration
             RuleFor(x => x.Email)
                 .NotEmpty()
                 .EmailAddress()
-                .WithMessage("A valid email address is required.");
+                .WithMessage(RegistrationConstants.ExceptionStrings.EmailValidationMessage);
         }
     }
 }

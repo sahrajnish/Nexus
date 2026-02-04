@@ -25,14 +25,14 @@ namespace Nexus.Identity.API.Features.Registration
                 .AnyAsync(u => u.Email == request.Email, cancellationToken);
             if(existingUser)
             {
-                throw new ConflictException("Email already exists.");
+                throw new ConflictException(RegistrationConstants.ExceptionStrings.EmailAlreadyExists);
             }
 
             var tempUser = await _context.TempUsers
                     .FirstOrDefaultAsync(u => u.Email == request.Email);
             if (tempUser != null && tempUser?.EmailExpiresAt > DateTime.UtcNow)
             {
-                throw new ConflictException("A registration process is already in progress for this email.");
+                throw new ConflictException(RegistrationConstants.ExceptionStrings.RegistrationInProgress);
             }
 
             if(tempUser != null)
@@ -56,7 +56,7 @@ namespace Nexus.Identity.API.Features.Registration
             }
             catch (DbException ex)
             {
-                throw new ConflictException("Email already exists.");
+                throw new ConflictException(RegistrationConstants.ExceptionStrings.EmailAlreadyExists);
             }
 
             return newTempUser.Id;
