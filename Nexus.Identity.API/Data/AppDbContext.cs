@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Nexus.Identity.API.Domain;
 
 namespace Nexus.Identity.API.Data
@@ -33,6 +34,10 @@ namespace Nexus.Identity.API.Data
 
                 entity.Property(tu => tu.Email).IsRequired().HasMaxLength(255);
             });
+
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
         }
     }
 }

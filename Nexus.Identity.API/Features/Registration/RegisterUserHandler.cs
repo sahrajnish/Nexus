@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Nexus.Identity.API.Data;
 using Nexus.Identity.API.Domain;
 using Nexus.Shared.Utilities;
-using Nexus.Identity.API.Constants;
 using Nexus.Identity.API.Domain.Exceptions;
 using System.Data.Common;
+using MassTransit;
+using Nexus.Identity.API.Contracts;
 
 namespace Nexus.Identity.API.Features.Registration
 {
@@ -13,10 +14,12 @@ namespace Nexus.Identity.API.Features.Registration
     {
         private readonly AppDbContext _context;
         private readonly SnowFlakeIdGenerator _idGenerator;
-        public RegisterUserHandler(AppDbContext context, SnowFlakeIdGenerator idGenerator)
+        private readonly IPublishEndpoint _publishEndpoint;
+        public RegisterUserHandler(AppDbContext context, SnowFlakeIdGenerator idGenerator, IPublishEndpoint publishEndpoint)
         {
             _context = context;
             _idGenerator = idGenerator;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<long> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -40,15 +43,24 @@ namespace Nexus.Identity.API.Features.Registration
                 _context.TempUsers.Remove(tempUser);
             }
 
+            string OtpCode = OtpGenerator.GenerateSecureOtp();
+
             var newTempUser = new TempUser
             {
                 Id = _idGenerator.NextId(),
                 Email = request.Email,
                 EmailExpiresAt = DateTime.UtcNow
-                .AddMinutes(RegistrationConstants.EmailVerificationExpiryMinutes)
+                    .AddMinutes(RegistrationConstants.EmailVerificationExpiryMinutes),
+                OtpCode = OtpCode,
+                OtpAttempts = 1,
+                OtpCreatedAt = DateTime.UtcNow,
+                OtpExpiresAt = DateTime.UtcNow
+                    .AddMinutes(RegistrationConstants.OtpExpiryMinutes),
             };
 
             await _context.TempUsers.AddAsync(newTempUser, cancellationToken);
+
+            await _publishEndpoint.Publish(new UserRegisteredEvent(request.Email, OtpCode), cancellationToken);
 
             try
             {

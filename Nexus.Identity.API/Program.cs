@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Nexus.Identity.API.Constants;
 using Nexus.Identity.API.Data;
 using Nexus.Identity.API.Features.Registration;
+using Nexus.Identity.API.Infrastructure.Extension;
 using Nexus.Identity.API.Infrastructure.Middleware;
 using Nexus.Shared.Utilities;
 using Scalar.AspNetCore;
@@ -28,6 +29,9 @@ builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 builder.Services.AddSingleton<SnowFlakeIdGenerator>(
     _ => new SnowFlakeIdGenerator(ServerConstants.ServerId)
 );
+
+// MassTransit with RabbitMQ
+builder.Services.AddMessageBroker(builder.Configuration);
 
 var app = builder.Build();
 app.MapDefaultEndpoints();

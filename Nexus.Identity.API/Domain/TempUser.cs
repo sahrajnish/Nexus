@@ -1,4 +1,4 @@
-﻿using Nexus.Identity.API.Constants;
+﻿using Nexus.Identity.API.Features.Registration;
 
 namespace Nexus.Identity.API.Domain
 {

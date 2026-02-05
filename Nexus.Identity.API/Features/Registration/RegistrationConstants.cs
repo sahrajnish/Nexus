@@ -1,8 +1,9 @@
-﻿namespace Nexus.Identity.API.Constants
+﻿namespace Nexus.Identity.API.Features.Registration
 {
     public class RegistrationConstants
     {
         public const int EmailVerificationExpiryMinutes = 15;
+        public const int OtpExpiryMinutes = 15;
 
         public class ExceptionStrings
         {

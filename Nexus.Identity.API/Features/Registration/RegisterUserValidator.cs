@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using Nexus.Identity.API.Constants;
 
 namespace Nexus.Identity.API.Features.Registration
 {
