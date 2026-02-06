@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="Nexus.AppHost/Nexus.AppHost.csproj" />
   <Project Path="Nexus.Identity.API/Nexus.Identity.API.csproj" />
+  <Project Path="Nexus.Notification.API/Nexus.Notification.API.csproj" />
   <Project Path="Nexus.ServiceDefaults/Nexus.ServiceDefaults.csproj" />
   <Project Path="Nexus.Shared/Nexus.Shared.csproj" />
 </Solution>

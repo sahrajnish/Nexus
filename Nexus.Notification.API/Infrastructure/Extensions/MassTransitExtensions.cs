@@ -1,23 +1,16 @@
 ﻿using MassTransit;
-using Nexus.Identity.API.Data;
+using Nexus.Notification.API.Consumers;
 
-namespace Nexus.Identity.API.Infrastructure.Extension
+namespace Nexus.Notification.API.Infrastructure.Extensions
 {
     public static class MassTransitExtensions
     {
-        public static IServiceCollection AddMessageBroker (this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddMessageBroker(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddMassTransit(x =>
             {
-                // Create the Outbox for storing messages.
-                x.AddEntityFrameworkOutbox<AppDbContext>(o =>
-                {
-                    o.UsePostgres();
-                    o.UseBusOutbox();
-                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
-                });
+                x.AddConsumer<UserRegisteredConsumer>();
 
-                // RabbitMQ queues to get the messages from outbox.
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     var host = configuration["MessageBroker:Host"];
@@ -29,8 +22,16 @@ namespace Nexus.Identity.API.Infrastructure.Extension
                         h.Username(user);
                         h.Password(pass);
                     });
-                    
-                    // Scans for the consumers
+
+                    cfg.UseMessageRetry(r =>
+                    {
+                        r.Exponential(
+                            retryLimit: 5,
+                            minInterval: TimeSpan.FromSeconds(1),
+                            maxInterval: TimeSpan.FromSeconds(30),
+                            intervalDelta: TimeSpan.FromSeconds(5));
+                    });
+
                     cfg.ConfigureEndpoints(context);
                 });
             });

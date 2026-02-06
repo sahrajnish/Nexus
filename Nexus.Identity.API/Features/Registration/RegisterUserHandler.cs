@@ -6,7 +6,7 @@ using Nexus.Shared.Utilities;
 using Nexus.Identity.API.Domain.Exceptions;
 using System.Data.Common;
 using MassTransit;
-using Nexus.Identity.API.Contracts;
+using Nexus.Shared.Contracts.Identity;
 
 namespace Nexus.Identity.API.Features.Registration
 {
@@ -15,11 +15,13 @@ namespace Nexus.Identity.API.Features.Registration
         private readonly AppDbContext _context;
         private readonly SnowFlakeIdGenerator _idGenerator;
         private readonly IPublishEndpoint _publishEndpoint;
-        public RegisterUserHandler(AppDbContext context, SnowFlakeIdGenerator idGenerator, IPublishEndpoint publishEndpoint)
+        private readonly ILogger<RegisterUserHandler> _logger;
+        public RegisterUserHandler(AppDbContext context, SnowFlakeIdGenerator idGenerator, IPublishEndpoint publishEndpoint, ILogger<RegisterUserHandler> logger)
         {
             _context = context;
             _idGenerator = idGenerator;
             _publishEndpoint = publishEndpoint;
+            _logger = logger;
         }
 
         public async Task<long> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -65,6 +67,7 @@ namespace Nexus.Identity.API.Features.Registration
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Otp {OtpCode} generated for email {Email}", OtpCode, request.Email);
             }
             catch (DbException ex)
             {

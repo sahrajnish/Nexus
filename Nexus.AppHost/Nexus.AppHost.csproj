@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nexus.Identity.API\Nexus.Identity.API.csproj" />
+    <ProjectReference Include="..\Nexus.Notification.API\Nexus.Notification.API.csproj" />
   </ItemGroup>
 
 </Project>
