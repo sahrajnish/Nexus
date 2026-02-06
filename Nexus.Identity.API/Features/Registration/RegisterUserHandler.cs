@@ -25,16 +25,22 @@ namespace Nexus.Identity.API.Features.Registration
         }
 
         public async Task<long> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
-        {
+        { 
+            var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(normalizedEmail))
+            {
+                throw new ConflictException(RegistrationConstants.ExceptionStrings.EmailValidationMessage);
+            }
+
             var existingUser = await _context.Users
-                .AnyAsync(u => u.Email == request.Email, cancellationToken);
-            if(existingUser)
+                .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
+            if(existingUser != null)
             {
                 throw new ConflictException(RegistrationConstants.ExceptionStrings.EmailAlreadyExists);
             }
 
             var tempUser = await _context.TempUsers
-                    .FirstOrDefaultAsync(u => u.Email == request.Email);
+                    .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
             if (tempUser != null && tempUser?.EmailExpiresAt > DateTime.UtcNow)
             {
                 throw new ConflictException(RegistrationConstants.ExceptionStrings.RegistrationInProgress);
@@ -50,7 +56,7 @@ namespace Nexus.Identity.API.Features.Registration
             var newTempUser = new TempUser
             {
                 Id = _idGenerator.NextId(),
-                Email = request.Email,
+                Email = normalizedEmail,
                 EmailExpiresAt = DateTime.UtcNow
                     .AddMinutes(RegistrationConstants.EmailVerificationExpiryMinutes),
                 OtpCode = OtpCode,
@@ -62,12 +68,12 @@ namespace Nexus.Identity.API.Features.Registration
 
             await _context.TempUsers.AddAsync(newTempUser, cancellationToken);
 
-            await _publishEndpoint.Publish(new UserRegisteredEvent(request.Email, OtpCode), cancellationToken);
+            await _publishEndpoint.Publish(new UserRegisteredEvent(normalizedEmail, OtpCode), cancellationToken);
 
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Otp {OtpCode} generated for email {Email}", OtpCode, request.Email);
+                _logger.LogInformation("Otp {OtpCode} generated for email {Email}", OtpCode, normalizedEmail);
             }
             catch (DbException ex)
             {
