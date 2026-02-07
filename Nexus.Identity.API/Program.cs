@@ -5,6 +5,7 @@ using Nexus.Identity.API.Data;
 using Nexus.Identity.API.Features.Registration;
 using Nexus.Identity.API.Infrastructure.Extension;
 using Nexus.Identity.API.Infrastructure.Middleware;
+using Nexus.Identity.API.Infrastructure.RateLimiting;
 using Nexus.Shared.Utilities;
 using Scalar.AspNetCore;
 using System.Reflection;
@@ -12,6 +13,13 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+// Redis
+builder.Services.AddRedisCache(builder.Configuration);
+
+builder.Services.AddSingleton<IRateLimiterService, RedisRateLimiterService>();
+builder.Services.AddSingleton<GlobalRateLimitPolicy>();
+builder.Services.AddSingleton<RateLimitingPolicyProvider>();
 
 // Database
 builder.AddNpgsqlDbContext<AppDbContext>("IdentityDb", settings =>
@@ -42,6 +50,7 @@ if (app.Environment.IsDevelopment())
     // Scalar API Reference
     app.MapScalarApiReference();
 }
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.MapRegisterUserEndPoint();
