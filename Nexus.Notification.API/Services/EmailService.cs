@@ -1,5 +1,4 @@
-﻿
-using Mailjet.Client;
+﻿using Mailjet.Client;
 using Mailjet.Client.Resources;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
@@ -28,6 +27,7 @@ namespace Nexus.Notification.API.Services
         {
             try
             {
+                _logger.LogInformation("Preparing to send OTP email to {Email}", email);
                 var request = new MailjetRequest
                 {
                     Resource = SendV31.Resource
@@ -79,14 +79,13 @@ namespace Nexus.Notification.API.Services
                 }
                 else
                 {
-                    _logger.LogError("Mailjet failed. StatusCode: {StatusCode}, Response: {Response}", response.StatusCode, response.GetData());
-
+                    _logger.LogError("Mailjet failed. OTP sending failed to {Email}", email);
                     throw new Exception("Failed to send email via Mailjet");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error sending email to {Email}: {Message}", email, ex.Message);
+                _logger.LogError("Error sending OTP to {Email}: {Message}", email, ex.Message);
                 throw;
             }
         }

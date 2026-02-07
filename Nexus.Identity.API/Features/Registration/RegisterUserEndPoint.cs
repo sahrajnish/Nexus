@@ -20,7 +20,12 @@ namespace Nexus.Identity.API.Features.Registration
                 }
 
                 var userId = await mediator.Send(command);
-                return Results.Created($"/api/users/{userId}", new { Id = userId });
+                return Results.Created($"/api/users/{userId}", new 
+                { 
+                    Id = userId,
+                    IsSuccess = true,
+                    Message = "OTP successfully sent to your email."
+                });
             })
             .WithName("RegisterUser");
         }

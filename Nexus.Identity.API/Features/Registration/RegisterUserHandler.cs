@@ -26,6 +26,8 @@ namespace Nexus.Identity.API.Features.Registration
 
         public async Task<long> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         { 
+            _logger.LogInformation("Starting registration process for email {Email}", request.Email);
+
             var normalizedEmail = request.Email.Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(normalizedEmail))
             {
@@ -36,13 +38,15 @@ namespace Nexus.Identity.API.Features.Registration
                 .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
             if(existingUser != null)
             {
+                _logger.LogWarning("Registration attempt with existing email {Email}", normalizedEmail);
                 throw new ConflictException(RegistrationConstants.ExceptionStrings.EmailAlreadyExists);
             }
 
             var tempUser = await _context.TempUsers
-                    .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+                    .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
             if (tempUser != null && tempUser?.EmailExpiresAt > DateTime.UtcNow)
             {
+                _logger.LogWarning("Registration attempt with email {Email} that has an active registration in progress", normalizedEmail);
                 throw new ConflictException(RegistrationConstants.ExceptionStrings.RegistrationInProgress);
             }
 
@@ -73,10 +77,13 @@ namespace Nexus.Identity.API.Features.Registration
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Otp {OtpCode} generated for email {Email}", OtpCode, normalizedEmail);
+                _logger.LogInformation("User {Email} saved to Temp Table with OTP.", normalizedEmail);
+                _logger.LogInformation("Published OTP for email {Email}", normalizedEmail);
             }
             catch (DbException ex)
             {
+                _logger.LogError("Database error occurred while saving TempUser for email {Email}", normalizedEmail);
+                _logger.LogError(ex.Message);
                 throw new ConflictException(RegistrationConstants.ExceptionStrings.EmailAlreadyExists);
             }
 

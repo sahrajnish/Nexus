@@ -17,13 +17,10 @@ namespace Nexus.Notification.API.Consumers
 
         public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
         {
+            _logger.LogInformation("Received OTP in Notification Service for email: {Email}", context.Message.Email);
             var message = context.Message;
 
-            _logger.LogInformation("Received UserRegisteredEvent for email: {Email}", message.Email);
-
             await _emailService.SendEmailAsync(message.Email, message.OtpCode);
-
-            _logger.LogInformation("Sent OTP email to: {Email}", message.Email);
         }
     }
 }
