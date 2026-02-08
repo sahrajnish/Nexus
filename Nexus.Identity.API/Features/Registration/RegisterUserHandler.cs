@@ -81,16 +81,16 @@ namespace Nexus.Identity.API.Features.Registration
             await _context.TempUsers.AddAsync(newTempUser, cancellationToken);
             await _context.Otps.AddAsync(registerOtp, cancellationToken);
 
+            await _publishEndpoint.Publish(new UserRegisteredEvent
+            {
+                Email = normalizedEmail,
+                OtpCode = otpCode
+            }, cancellationToken);
+
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("User {Email} saved to Temp Table with OTP.", normalizedEmail);
-
-                await _publishEndpoint.Publish(new UserRegisteredEvent
-                {
-                    Email = normalizedEmail,
-                    OtpCode = otpCode
-                }, cancellationToken);
+                _logger.LogInformation("User {Email} saved to Table.", normalizedEmail);
                 _logger.LogInformation("Published OTP for email {Email}", normalizedEmail);
             }
             catch (DbException ex)
