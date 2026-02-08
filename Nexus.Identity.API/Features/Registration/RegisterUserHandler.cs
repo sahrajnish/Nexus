@@ -72,7 +72,11 @@ namespace Nexus.Identity.API.Features.Registration
 
             await _context.TempUsers.AddAsync(newTempUser, cancellationToken);
 
-            await _publishEndpoint.Publish(new UserRegisteredEvent(normalizedEmail, OtpCode), cancellationToken);
+            await _publishEndpoint.Publish(new UserRegisteredEvent
+            {
+                Email = normalizedEmail,
+                OtpCode = OtpCode
+            }, cancellationToken);
 
             try
             {

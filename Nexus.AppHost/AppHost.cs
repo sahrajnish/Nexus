@@ -18,6 +18,7 @@ builder.AddProject<Projects.Nexus_Identity_API>("nexus-identity-api")
     .WithReference(redis)
     .WithReference(rabbit);
 
-builder.AddProject<Projects.Nexus_Notification_API>("nexus-notification-api");
+builder.AddProject<Projects.Nexus_Notification_API>("nexus-notification-api")
+    .WithReference(rabbit);
 
 builder.Build().Run();

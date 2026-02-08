@@ -1,7 +1,8 @@
 ﻿namespace Nexus.Shared.Contracts.Identity
 {
-    public record UserRegisteredEvent(
-        string Email,
-        string OtpCode
-    );
+    public record UserRegisteredEvent
+    {
+        public string Email { get; init; } = default!;
+        public string OtpCode { get; init; } = default!;
+    };
 }

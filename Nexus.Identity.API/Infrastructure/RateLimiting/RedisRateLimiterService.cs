@@ -35,7 +35,11 @@ namespace Nexus.Identity.API.Infrastructure.RateLimiting
             // Set expiration so Redis auto-cleans inactive keys and prevents memory growth.
             _ = transaction.KeyExpireAsync(key, timeWindow);
 
-            await transaction.ExecuteAsync();
+            var excecuted = await transaction.ExecuteAsync();
+            if(!excecuted)
+            {
+                return false;
+            }
 
             var requestCount = await countTask;
 

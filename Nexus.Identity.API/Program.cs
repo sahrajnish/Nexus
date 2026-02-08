@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 // Redis
-builder.Services.AddRedisCache(builder.Configuration);
+builder.AddRedisClient("redis");
 
 builder.Services.AddSingleton<IRateLimiterService, RedisRateLimiterService>();
 builder.Services.AddSingleton<GlobalRateLimitPolicy>();

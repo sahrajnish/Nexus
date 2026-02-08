@@ -7,6 +7,7 @@ namespace Nexus.Identity.API.Infrastructure.Extension
         public static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
         {
             var redisConnectionString = configuration.GetConnectionString("redis");
+
             if(string.IsNullOrEmpty(redisConnectionString))
             {
                 throw new InvalidOperationException("Redis connection string is not configured.");

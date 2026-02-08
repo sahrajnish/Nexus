@@ -20,16 +20,26 @@ namespace Nexus.Identity.API.Infrastructure.Extension
                 // RabbitMQ queues to get the messages from outbox.
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    var host = configuration["MessageBroker:Host"];
-                    var user = configuration["MessageBroker:Username"];
-                    var pass = configuration["MessageBroker:Password"];
-
-                    cfg.Host(host, "/", h =>
+                    var connectionString = configuration.GetConnectionString("rabbitmq");
+                    if(string.IsNullOrEmpty(connectionString))
                     {
-                        h.Username(user);
-                        h.Password(pass);
+                        throw new InvalidOperationException("RabbitMQ connection string is not configured.");
+                    }
+
+                    var uri = new Uri(connectionString);
+
+                    cfg.Host(uri, h =>
+                    {
+                        if(!string.IsNullOrEmpty(uri.UserInfo))
+                        {
+                            var parts = uri.UserInfo.Split(':', 2);
+                            h.Username(parts[0]);
+
+                            if (parts.Length > 1)
+                                h.Password(parts[1]);
+                        }
                     });
-                    
+
                     // Scans for the consumers
                     cfg.ConfigureEndpoints(context);
                 });
