@@ -21,7 +21,6 @@ builder.Services.Configure<MailjetOptions>(
 // Add application services
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-
 var app = builder.Build();
 
 app.MapDefaultEndpoints();

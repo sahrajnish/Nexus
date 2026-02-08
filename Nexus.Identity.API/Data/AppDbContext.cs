@@ -13,6 +13,7 @@ namespace Nexus.Identity.API.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<TempUser> TempUsers { get; set; }
+        public DbSet<Otp> Otps { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -29,10 +30,23 @@ namespace Nexus.Identity.API.Data
             modelBuilder.Entity<TempUser>(entity =>
             {
                 entity.HasKey(tu => tu.Id);
-
                 entity.HasIndex(tu => tu.Email).IsUnique();
-
                 entity.Property(tu => tu.Email).IsRequired().HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<Otp>(entity =>
+            {
+                entity.HasKey(o => o.Id);
+                entity.HasIndex(x => new { x.Email, x.Purpose, x.IsUsed });
+                entity.Property(o => o.Email).IsRequired().HasMaxLength(255);
+                entity.Property(o => o.Code).IsRequired().HasMaxLength(10);
+                entity.Property(o => o.Purpose).IsRequired();
+                entity.Property(o => o.IsUsed).IsRequired();
+                entity.Property(o => o.Attempts).IsRequired();
+                entity.Property(o => o.ResendAttempts).IsRequired();
+                entity.Property(o => o.CreatedAt).IsRequired();
+                entity.Property(o => o.ExpiresAt).IsRequired();
+                entity.Property(o => o.UpdatedAt).IsRequired();
             });
 
             modelBuilder.AddInboxStateEntity();

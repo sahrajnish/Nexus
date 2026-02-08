@@ -7,6 +7,7 @@ using Nexus.Identity.API.Domain.Exceptions;
 using System.Data.Common;
 using MassTransit;
 using Nexus.Shared.Contracts.Identity;
+using Nexus.Identity.API.Domain.Utils;
 
 namespace Nexus.Identity.API.Features.Registration
 {
@@ -55,7 +56,7 @@ namespace Nexus.Identity.API.Features.Registration
                 _context.TempUsers.Remove(tempUser);
             }
 
-            string OtpCode = OtpGenerator.GenerateSecureOtp();
+            string otpCode = OtpGenerator.GenerateSecureOtp();
 
             var newTempUser = new TempUser
             {
@@ -63,25 +64,33 @@ namespace Nexus.Identity.API.Features.Registration
                 Email = normalizedEmail,
                 EmailExpiresAt = DateTime.UtcNow
                     .AddMinutes(RegistrationConstants.EmailVerificationExpiryMinutes),
-                OtpCode = OtpCode,
-                OtpAttempts = 1,
-                OtpCreatedAt = DateTime.UtcNow,
-                OtpExpiresAt = DateTime.UtcNow
-                    .AddMinutes(RegistrationConstants.OtpExpiryMinutes),
+                UpdatedAt = DateTime.UtcNow
             };
 
-            await _context.TempUsers.AddAsync(newTempUser, cancellationToken);
-
-            await _publishEndpoint.Publish(new UserRegisteredEvent
+            var registerOtp = new Otp
             {
+                Id = _idGenerator.NextId(),
                 Email = normalizedEmail,
-                OtpCode = OtpCode
-            }, cancellationToken);
+                Code = otpCode,
+                Purpose = OtpPurpose.Register,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(RegistrationConstants.OtpExpiryMinutes),
+                UpdatedAt = DateTime.UtcNow
+            };
+
+
+            await _context.TempUsers.AddAsync(newTempUser, cancellationToken);
+            await _context.Otps.AddAsync(registerOtp, cancellationToken);
 
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("User {Email} saved to Temp Table with OTP.", normalizedEmail);
+
+                await _publishEndpoint.Publish(new UserRegisteredEvent
+                {
+                    Email = normalizedEmail,
+                    OtpCode = otpCode
+                }, cancellationToken);
                 _logger.LogInformation("Published OTP for email {Email}", normalizedEmail);
             }
             catch (DbException ex)
