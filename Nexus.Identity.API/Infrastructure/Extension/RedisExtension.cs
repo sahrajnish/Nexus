@@ -6,6 +6,7 @@ namespace Nexus.Identity.API.Infrastructure.Extension
     {
         public static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
         {
+            // Get the Redis connection string from Aspire configuration and configure the connection multiplexer
             var redisConnectionString = configuration.GetConnectionString("redis");
 
             if(string.IsNullOrEmpty(redisConnectionString))

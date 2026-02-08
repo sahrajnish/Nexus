@@ -1,23 +1,29 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+// Add RabbitMQ
 var rabbit = builder.AddRabbitMQ("rabbitmq")
-    .WithManagementPlugin();
+    .WithManagementPlugin(); // Enables RabbitMQ management plugin for easier monitoring and management.
 
+// Add PostgreSQL
 var postgres = builder.AddPostgres("Nexus")
     .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent); 
+    .WithLifetime(ContainerLifetime.Persistent);
 
+// Add a database for Identity API. This will create a PostgreSQL database named "IdentityDb" that the Identity API can use for its data storage.
 var identityDb = postgres.AddDatabase("IdentityDb");
 
+// Add Redis for caching and rate limiting.
 var redis = builder.AddRedis("redis")
     .WithDataVolume() // Data persists even if container restarts.
     .WithLifetime(ContainerLifetime.Persistent); // Redis Container stays alive across Aspire restarts.
 
+// Add the Identity API project and reference the IdentityDb, Redis, and RabbitMQ services.
 builder.AddProject<Projects.Nexus_Identity_API>("nexus-identity-api")
     .WithReference(identityDb)
     .WithReference(redis)
     .WithReference(rabbit);
 
+// Add the Notification API project and reference RabbitMQ for message handling.
 builder.AddProject<Projects.Nexus_Notification_API>("nexus-notification-api")
     .WithReference(rabbit);
 

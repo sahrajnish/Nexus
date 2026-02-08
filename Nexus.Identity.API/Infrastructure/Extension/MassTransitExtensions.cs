@@ -20,6 +20,7 @@ namespace Nexus.Identity.API.Infrastructure.Extension
                 // RabbitMQ queues to get the messages from outbox.
                 x.UsingRabbitMq((context, cfg) =>
                 {
+                    // Get the RabbitMQ connection string from Aspire configuration and configure the host
                     var connectionString = configuration.GetConnectionString("rabbitmq");
                     if(string.IsNullOrEmpty(connectionString))
                     {
