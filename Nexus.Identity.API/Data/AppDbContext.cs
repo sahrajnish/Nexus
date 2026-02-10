@@ -18,14 +18,24 @@ namespace Nexus.Identity.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
+                entity.HasIndex(u => u.Email).IsUnique();
+                entity.Property(u => u.NormalizedEmail).IsRequired().HasMaxLength(255);
+                entity.HasIndex(u => u.NormalizedEmail).IsUnique();
+                entity.Property(u => u.IsEmailVerified).IsRequired();
+                entity.Property(u => u.IsDeleted).IsRequired();
+                entity.Property(u => u.FailedLoginAttempts).IsRequired();
+                entity.Property(u => u.PasswordHash).HasMaxLength(500);
+                entity.Property(u => u.FullName).HasMaxLength(200);
+                entity.Property(u => u.SecurityStamp).IsRequired().HasMaxLength(200);
+                entity.Property(u => u.CreatedAt).IsRequired();
+                entity.Property(u => u.UpdatedAt).IsRequired();
 
-            modelBuilder.Entity<User>()
-                .Property(u => u.Email)
-                .IsRequired()
-                .HasMaxLength(255);
+                entity.HasIndex(u => new { u.NormalizedEmail, u.DeletedAt });
+            });
 
             modelBuilder.Entity<TempUser>(entity =>
             {
@@ -39,7 +49,7 @@ namespace Nexus.Identity.API.Data
                 entity.HasKey(o => o.Id);
                 entity.HasIndex(x => new { x.Email, x.Purpose, x.IsUsed });
                 entity.Property(o => o.Email).IsRequired().HasMaxLength(255);
-                entity.Property(o => o.Code).IsRequired().HasMaxLength(10);
+                entity.Property(o => o.Code).IsRequired().HasMaxLength(255);
                 entity.Property(o => o.Purpose).IsRequired();
                 entity.Property(o => o.IsUsed).IsRequired();
                 entity.Property(o => o.Attempts).IsRequired();

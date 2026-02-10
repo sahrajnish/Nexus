@@ -57,6 +57,8 @@ namespace Nexus.Identity.API.Features.Registration
             }
 
             string otpCode = OtpGenerator.GenerateSecureOtp();
+            var otpToSend = otpCode;
+            otpCode = BCrypt.Net.BCrypt.HashPassword(otpCode);
 
             var newTempUser = new TempUser
             {
@@ -84,7 +86,7 @@ namespace Nexus.Identity.API.Features.Registration
             await _publishEndpoint.Publish(new UserRegisteredEvent
             {
                 Email = normalizedEmail,
-                OtpCode = otpCode
+                OtpCode = otpToSend
             }, cancellationToken);
 
             try

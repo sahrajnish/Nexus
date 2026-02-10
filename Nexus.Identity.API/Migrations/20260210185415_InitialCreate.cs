@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nexus.Identity.API.Migrations
 {
     /// <inheritdoc />
-    public partial class AddMassTransitOutbox : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,6 +36,29 @@ namespace Nexus.Identity.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Otps",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Purpose = table.Column<int>(type: "integer", nullable: false),
+                    IsUsed = table.Column<bool>(type: "boolean", nullable: false),
+                    Attempts = table.Column<int>(type: "integer", nullable: false),
+                    ResendAttempts = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastAttemptAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastResendAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Otps", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OutboxState",
                 columns: table => new
                 {
@@ -49,6 +72,49 @@ namespace Nexus.Identity.API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OutboxState", x => x.OutboxId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TempUsers",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    EmailExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EmailAddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TempUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    NormalizedEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    FullName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    IsEmailVerified = table.Column<bool>(type: "boolean", nullable: false),
+                    FailedLoginAttempts = table.Column<int>(type: "integer", nullable: false),
+                    LockoutEndAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PasswordChangedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -99,6 +165,11 @@ namespace Nexus.Identity.API.Migrations
                 column: "Delivered");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Otps_Email_Purpose_IsUsed",
+                table: "Otps",
+                columns: new[] { "Email", "Purpose", "IsUsed" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessage_EnqueueTime",
                 table: "OutboxMessage",
                 column: "EnqueueTime");
@@ -124,13 +195,45 @@ namespace Nexus.Identity.API.Migrations
                 name: "IX_OutboxState_Created",
                 table: "OutboxState",
                 column: "Created");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TempUsers_Email",
+                table: "TempUsers",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_NormalizedEmail",
+                table: "Users",
+                column: "NormalizedEmail",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_NormalizedEmail_DeletedAt",
+                table: "Users",
+                columns: new[] { "NormalizedEmail", "DeletedAt" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "Otps");
+
+            migrationBuilder.DropTable(
                 name: "OutboxMessage");
+
+            migrationBuilder.DropTable(
+                name: "TempUsers");
+
+            migrationBuilder.DropTable(
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "InboxState");

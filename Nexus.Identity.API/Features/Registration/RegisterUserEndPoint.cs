@@ -20,7 +20,7 @@ namespace Nexus.Identity.API.Features.Registration
                 }
 
                 var userId = await mediator.Send(command);
-                return Results.Created($"/api/users/{userId}", new 
+                return Results.Ok(new 
                 { 
                     Id = userId,
                     IsSuccess = true,

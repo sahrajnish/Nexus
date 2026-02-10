@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Nexus.Identity.API.Constants;
 using Nexus.Identity.API.Data;
 using Nexus.Identity.API.Features.Registration;
+using Nexus.Identity.API.Features.VerifyOtp;
 using Nexus.Identity.API.Infrastructure.Extension;
 using Nexus.Identity.API.Infrastructure.Middleware;
 using Nexus.Identity.API.Infrastructure.RateLimiting;
+using Nexus.Identity.API.Services;
 using Nexus.Shared.Utilities;
 using Scalar.AspNetCore;
 using System.Reflection;
@@ -20,6 +22,7 @@ builder.AddRedisClient("redis");
 builder.Services.AddSingleton<IRateLimiterService, RedisRateLimiterService>();
 builder.Services.AddSingleton<GlobalRateLimitPolicy>();
 builder.Services.AddSingleton<RateLimitingPolicyProvider>();
+builder.Services.AddScoped<OtpVerificationService>();
 
 // Database
 builder.AddNpgsqlDbContext<AppDbContext>("IdentityDb", settings =>
@@ -50,10 +53,11 @@ if (app.Environment.IsDevelopment())
     // Scalar API Reference
     app.MapScalarApiReference();
 }
-app.UseMiddleware<RateLimitingMiddleware>();
+// app.UseMiddleware<RateLimitingMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.MapRegisterUserEndPoint();
+app.MapVerifyOtpEndPoint();
 
 using (var scope = app.Services.CreateScope())
 {
