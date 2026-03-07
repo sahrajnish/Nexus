@@ -13,6 +13,9 @@ namespace Nexus.Video.API.Data.Configuration
             builder.Property(x => x.Id)
                 .ValueGeneratedNever();
 
+            builder.Property(x => x.Status)
+                .HasConversion<int>(); // Forces EF Core to seamlessly translate between VideoStatus and int
+
             builder.Property(x => x.Title).HasMaxLength(255);
             builder.Property(x => x.Description).HasMaxLength(2000);
             builder.Property(x => x.ContentType).HasMaxLength(50);

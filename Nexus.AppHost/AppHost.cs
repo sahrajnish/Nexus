@@ -24,7 +24,8 @@ var storage = builder.AddAzureStorage("nexus-storage")
     .RunAsEmulator();
 
 // Define a Blob Storage endpoint specifically for video files
-var videoBlobs = storage.AddBlobs("raw-videos"); 
+var rawVideoBlobs = storage.AddBlobs("raw-videos");
+var processingVideoBlob = storage.AddBlobs("processing-videos");
 
 // Add the Identity API project and reference the IdentityDb, Redis, and RabbitMQ services.
 builder.AddProject<Projects.Nexus_Identity_API>("nexus-identity-api")
@@ -39,6 +40,7 @@ builder.AddProject<Projects.Nexus_Notification_API>("nexus-notification-api")
 // Add the Video API project
 builder.AddProject<Projects.Nexus_Video_API>("nexus-video-api")
     .WithReference(videoDb)
-    .WithReference(videoBlobs);
+    .WithReference(rawVideoBlobs)
+    .WithReference(processingVideoBlob);
 
 builder.Build().Run();
