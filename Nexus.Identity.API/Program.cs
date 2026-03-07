@@ -53,7 +53,8 @@ if (app.Environment.IsDevelopment())
     // Scalar API Reference
     app.MapScalarApiReference();
 }
-// app.UseMiddleware<RateLimitingMiddleware>();
+
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.MapRegisterUserEndPoint();
