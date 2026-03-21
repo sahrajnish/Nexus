@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Ignore Aspirate state and secrets
+**/aspirate-state.json
+
 # User-specific files
 *.rsuser
 *.suo
