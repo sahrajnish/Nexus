@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json.schemastore.org/aspire-8.0.json",
+  "resources": {
+    "rabbitmq": {
+      "type": "container.v0",
+      "connectionString": "amqp://guest:{rabbitmq-password-uri-encoded.value}@{rabbitmq.bindings.tcp.host}:{rabbitmq.bindings.tcp.port}",
+      "image": "docker.io/library/rabbitmq:4.2-management",
+      "env": {
+        "RABBITMQ_DEFAULT_USER": "guest",
+        "RABBITMQ_DEFAULT_PASS": "{rabbitmq-password.value}"
+      },
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 5672
+        },
+        "management": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 15672
+        }
+      }
+    },
+    "Nexus": {
+      "type": "container.v0",
+      "connectionString": "Host={Nexus.bindings.tcp.host};Port={Nexus.bindings.tcp.port};Username=postgres;Password={Nexus-password.value}",
+      "image": "docker.io/library/postgres:17.6",
+      "volumes": [
+        {
+          "name": "nexus.apphost-a53e91cda2-Nexus-data",
+          "target": "/var/lib/postgresql/data",
+          "readOnly": false
+        }
+      ],
+      "env": {
+        "POSTGRES_HOST_AUTH_METHOD": "scram-sha-256",
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256 --auth-local=scram-sha-256",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "{Nexus-password.value}"
+      },
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 5432
+        }
+      }
+    },
+    "IdentityDb": {
+      "type": "value.v0",
+      "connectionString": "{Nexus.connectionString};Database=IdentityDb"
+    },
+    "redis": {
+      "type": "container.v0",
+      "connectionString": "{redis.bindings.tcp.host}:{redis.bindings.tcp.port},password={redis-password.value}",
+      "image": "docker.io/library/redis:8.2",
+      "entrypoint": "/bin/sh",
+      "args": [
+        "-c",
+        "redis-server --requirepass $REDIS_PASSWORD --save 60 1"
+      ],
+      "volumes": [
+        {
+          "name": "nexus.apphost-a53e91cda2-redis-data",
+          "target": "/data",
+          "readOnly": false
+        }
+      ],
+      "env": {
+        "REDIS_PASSWORD": "{redis-password.value}"
+      },
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 6379
+        }
+      }
+    },
+    "nexus-identity-api": {
+      "type": "project.v0",
+      "path": "../Nexus.Identity.API/Nexus.Identity.API.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{nexus-identity-api.bindings.http.targetPort}",
+        "ConnectionStrings__IdentityDb": "{IdentityDb.connectionString}",
+        "IDENTITYDB_HOST": "{Nexus.bindings.tcp.host}",
+        "IDENTITYDB_PORT": "{Nexus.bindings.tcp.port}",
+        "IDENTITYDB_USERNAME": "postgres",
+        "IDENTITYDB_PASSWORD": "{Nexus-password.value}",
+        "IDENTITYDB_URI": "postgresql://postgres:{Nexus-password-uri-encoded.value}@{Nexus.bindings.tcp.host}:{Nexus.bindings.tcp.port}/IdentityDb",
+        "IDENTITYDB_JDBCCONNECTIONSTRING": "jdbc:postgresql://{Nexus.bindings.tcp.host}:{Nexus.bindings.tcp.port}/IdentityDb",
+        "IDENTITYDB_DATABASENAME": "IdentityDb",
+        "ConnectionStrings__redis": "{redis.connectionString}",
+        "REDIS_HOST": "{redis.bindings.tcp.host}",
+        "REDIS_PORT": "{redis.bindings.tcp.port}",
+        "REDIS_PASSWORD": "{redis-password.value}",
+        "REDIS_URI": "redis://:{redis-password-uri-encoded.value}@{redis.bindings.tcp.host}:{redis.bindings.tcp.port}",
+        "ConnectionStrings__rabbitmq": "{rabbitmq.connectionString}",
+        "RABBITMQ_HOST": "{rabbitmq.bindings.tcp.host}",
+        "RABBITMQ_PORT": "{rabbitmq.bindings.tcp.port}",
+        "RABBITMQ_USERNAME": "guest",
+        "RABBITMQ_PASSWORD": "{rabbitmq-password.value}",
+        "RABBITMQ_URI": "amqp://guest:{rabbitmq-password-uri-encoded.value}@{rabbitmq.bindings.tcp.host}:{rabbitmq.bindings.tcp.port}"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        }
+      }
+    },
+    "nexus-notification-api": {
+      "type": "project.v0",
+      "path": "../Nexus.Notification.API/Nexus.Notification.API.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{nexus-notification-api.bindings.http.targetPort}",
+        "ConnectionStrings__rabbitmq": "{rabbitmq.connectionString}",
+        "RABBITMQ_HOST": "{rabbitmq.bindings.tcp.host}",
+        "RABBITMQ_PORT": "{rabbitmq.bindings.tcp.port}",
+        "RABBITMQ_USERNAME": "guest",
+        "RABBITMQ_PASSWORD": "{rabbitmq-password.value}",
+        "RABBITMQ_URI": "amqp://guest:{rabbitmq-password-uri-encoded.value}@{rabbitmq.bindings.tcp.host}:{rabbitmq.bindings.tcp.port}"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        }
+      }
+    },
+    "rabbitmq-password": {
+      "type": "parameter.v0",
+      "value": "{rabbitmq-password.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true,
+          "default": {
+            "generate": {
+              "minLength": 22,
+              "special": false
+            }
+          }
+        }
+      }
+    },
+    "rabbitmq-password-uri-encoded": {
+      "type": "annotated.string",
+      "value": "{rabbitmq-password.value}",
+      "filter": "uri"
+    },
+    "Nexus-password": {
+      "type": "parameter.v0",
+      "value": "{Nexus-password.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true,
+          "default": {
+            "generate": {
+              "minLength": 22
+            }
+          }
+        }
+      }
+    },
+    "Nexus-password-uri-encoded": {
+      "type": "annotated.string",
+      "value": "{Nexus-password.value}",
+      "filter": "uri"
+    },
+    "redis-password": {
+      "type": "parameter.v0",
+      "value": "{redis-password.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true,
+          "default": {
+            "generate": {
+              "minLength": 22,
+              "special": false
+            }
+          }
+        }
+      }
+    },
+    "redis-password-uri-encoded": {
+      "type": "annotated.string",
+      "value": "{redis-password.value}",
+      "filter": "uri"
+    }
+  }
+}
