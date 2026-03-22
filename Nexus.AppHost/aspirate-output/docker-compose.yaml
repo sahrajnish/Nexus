@@ -8,53 +8,8 @@ services:
     - target: 18888
       published: 18888
     restart: unless-stopped
-  rabbitmq:
-    container_name: "rabbitmq"
-    image: "docker.io/library/rabbitmq:4.2-management"
-    environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "4w4pNLWHblVtUePeyZvIBU"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
-      OTEL_SERVICE_NAME: "rabbitmq"
-    ports:
-    - target: 5672
-      published: 5672
-    - target: 15672
-      published: 15672
-    restart: unless-stopped
-  Nexus:
-    container_name: "Nexus"
-    image: "docker.io/library/postgres:17.6"
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "oYvBEN2pSz8C7s2TdITg1s"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
-      OTEL_SERVICE_NAME: "Nexus"
-    volumes:
-    - "nexus-apphost-a53e91cda2-nexus-data:/var/lib/postgresql/data"
-    ports:
-    - target: 5432
-      published: 5432
-    restart: unless-stopped
-  redis:
-    container_name: "redis"
-    image: "docker.io/library/redis:8.2"
-    environment:
-      REDIS_PASSWORD: "T6ImPwQtksymuhbJEJhvkr"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
-      OTEL_SERVICE_NAME: "redis"
-    volumes:
-    - "nexus-apphost-a53e91cda2-redis-data:/data"
-    ports:
-    - target: 6379
-      published: 6379
-    command:
-    - "-c"
-    - "redis-server --requirepass $REDIS_PASSWORD --save 60 1"
-    - "/bin/sh"
-    restart: unless-stopped
+
+  # --- Identity API ---
   nexus-identity-api:
     container_name: "nexus-identity-api"
     image: "nexus-identity-api:latest"
@@ -64,33 +19,22 @@ services:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       HTTP_PORTS: "8080"
-      ConnectionStrings__IdentityDb: "Host=Nexus;Port=5432;Username=postgres;Password=oYvBEN2pSz8C7s2TdITg1s;Database=IdentityDb"
-      IDENTITYDB_HOST: "Nexus"
-      IDENTITYDB_PORT: "5432"
-      IDENTITYDB_USERNAME: "postgres"
-      IDENTITYDB_PASSWORD: "oYvBEN2pSz8C7s2TdITg1s"
-      IDENTITYDB_URI: "postgresql://postgres:{Nexus-password-uri-encoded.value}@Nexus:5432/IdentityDb"
-      IDENTITYDB_JDBCCONNECTIONSTRING: "jdbc:postgresql://Nexus:5432/IdentityDb"
-      IDENTITYDB_DATABASENAME: "IdentityDb"
-      ConnectionStrings__redis: "redis:6379,password=T6ImPwQtksymuhbJEJhvkr"
-      REDIS_HOST: "redis"
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: "T6ImPwQtksymuhbJEJhvkr"
-      REDIS_URI: "redis://:{redis-password-uri-encoded.value}@redis:6379"
-      ConnectionStrings__rabbitmq: "amqp://guest:{rabbitmq-password-uri-encoded.value}@rabbitmq:5672"
-      RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: "guest"
-      RABBITMQ_PASSWORD: "4w4pNLWHblVtUePeyZvIBU"
-      RABBITMQ_URI: "amqp://guest:{rabbitmq-password-uri-encoded.value}@rabbitmq:5672"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_SERVICE_NAME: "nexus-identity-api"
+      
+      # --- THESE POINT TO YOUR .ENV FILE ---
+      ConnectionStrings__IdentityDb: ${ConnectionStrings__IdentityDb}
+      ConnectionStrings__redis: ${ConnectionStrings__redis}
+      ConnectionStrings__rabbitmq: ${ConnectionStrings__rabbitmq}
+      
     ports:
     - target: 8080
       published: 10000
     - target: 8443
       published: 10001
     restart: unless-stopped
+
+  # --- Notification API ---
   nexus-notification-api:
     container_name: "nexus-notification-api"
     image: "nexus-notification-api:latest"
@@ -100,20 +44,15 @@ services:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       HTTP_PORTS: "8080"
-      ConnectionStrings__rabbitmq: "amqp://guest:{rabbitmq-password-uri-encoded.value}@rabbitmq:5672"
-      RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: "guest"
-      RABBITMQ_PASSWORD: "4w4pNLWHblVtUePeyZvIBU"
-      RABBITMQ_URI: "amqp://guest:{rabbitmq-password-uri-encoded.value}@rabbitmq:5672"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_SERVICE_NAME: "nexus-notification-api"
+      
+      # --- THIS POINTS TO YOUR .ENV FILE ---
+      ConnectionStrings__rabbitmq: ${ConnectionStrings__rabbitmq}
+      
     ports:
     - target: 8080
       published: 10002
     - target: 8443
       published: 10003
     restart: unless-stopped
-volumes:
-  nexus-apphost-a53e91cda2-nexus-data: {}
-  nexus-apphost-a53e91cda2-redis-data: {}
