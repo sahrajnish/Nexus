@@ -7,5 +7,4 @@
   <Project Path="Nexus.Notification.API/Nexus.Notification.API.csproj" />
   <Project Path="Nexus.ServiceDefaults/Nexus.ServiceDefaults.csproj" />
   <Project Path="Nexus.Shared/Nexus.Shared.csproj" />
-  <Project Path="Nexus.Video.API/Nexus.Video.API.csproj" />
 </Solution>
