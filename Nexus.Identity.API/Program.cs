@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Nexus.Identity.API.Constants;
 using Nexus.Identity.API.Data;
@@ -31,6 +32,15 @@ builder.AddNpgsqlDbContext<AppDbContext>("IdentityDb", settings =>
 });
 
 builder.Services.AddOpenApi();
+
+// Trust Azure Container Apps reverse proxy
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Clear the known networks/proxies so it trusts the dynamic ACA load balancer
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // MediatR & FluentValidation
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
