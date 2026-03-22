@@ -55,6 +55,10 @@ builder.Services.AddSingleton<SnowFlakeIdGenerator>(
 builder.Services.AddMessageBroker(builder.Configuration);
 
 var app = builder.Build();
+
+// ADD THIS EXACT LINE RIGHT HERE:
+app.UseForwardedHeaders();
+
 app.MapDefaultEndpoints();
 
 if (app.Environment.IsDevelopment())
