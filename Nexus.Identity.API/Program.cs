@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using Nexus.Identity.API.Constants;
 using Nexus.Identity.API.Data;
 using Nexus.Identity.API.Features.Registration;
@@ -32,6 +33,21 @@ builder.AddNpgsqlDbContext<AppDbContext>("IdentityDb", settings =>
 
 builder.Services.AddOpenApi();
 
+// Scalar Api Document Transformer -> Force it to https
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info.Title = "Nexus.Identity.API | v2 (HTTPS FIXED)";
+
+        document.Servers = new List<OpenApiServer>
+        {
+            new OpenApiServer { Url = "https://identity-api.lemonwater-41f24217.australiaeast.azurecontainerapps.io" }
+        };
+        return Task.CompletedTask;
+    });
+});
+
 // MediatR & FluentValidation
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
@@ -45,13 +61,6 @@ builder.Services.AddSingleton<SnowFlakeIdGenerator>(
 builder.Services.AddMessageBroker(builder.Configuration);
 
 var app = builder.Build();
-
-// --- THE SLEDGEHAMMER: FORCE HTTPS ---
-app.Use((context, next) =>
-{
-    context.Request.Scheme = "https";
-    return next();
-});
 
 // ADD THIS EXACT LINE RIGHT HERE:
 app.UseForwardedHeaders();
