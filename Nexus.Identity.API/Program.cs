@@ -46,6 +46,13 @@ builder.Services.AddMessageBroker(builder.Configuration);
 
 var app = builder.Build();
 
+// --- THE SLEDGEHAMMER: FORCE HTTPS ---
+app.Use((context, next) =>
+{
+    context.Request.Scheme = "https";
+    return next();
+});
+
 // ADD THIS EXACT LINE RIGHT HERE:
 app.UseForwardedHeaders();
 
