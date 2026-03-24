@@ -40,7 +40,7 @@ namespace Nexus.Identity.API.Infrastructure.Middleware
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    error = "An unexpected error occured"
+                    error = $"An unexpected error occured: {ex.Message}"
                 });
             }
         }

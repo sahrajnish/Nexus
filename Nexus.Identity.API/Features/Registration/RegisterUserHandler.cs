@@ -53,7 +53,11 @@ namespace Nexus.Identity.API.Features.Registration
 
             if(tempUser != null)
             {
+                _logger.LogInformation("Cleaning up expired TempUser for email {Email}", normalizedEmail);
                 _context.TempUsers.Remove(tempUser);
+
+                _logger.LogInformation("Cleaning up existing OTPs for email {Email} and purpose Register", normalizedEmail);
+                _context.Otps.RemoveRange(_context.Otps.Where(o => o.Email == normalizedEmail && o.Purpose == OtpPurpose.Register));
             }
 
             string otpCode = OtpGenerator.GenerateSecureOtp();
