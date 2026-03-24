@@ -29,7 +29,9 @@ jobs:
         context: . 
         file: ./Nexus.Identity.API/Dockerfile 
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/identity-api:latest
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/identity-api:${{ github.sha }}
+          ${{ secrets.DOCKER_USERNAME }}/identity-api:latest
 
     # 4. Build and Push Notification API
     - name: Build and Push Notification Image
@@ -38,4 +40,28 @@ jobs:
         context: . 
         file: ./Nexus.Notification.API/Dockerfile 
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/notification-api:latest
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/notification-api:${{ github.sha }}  
+          ${{ secrets.DOCKER_USERNAME }}/notification-api:latest
+
+    # 5. Log in to Azure using the Service Principal (VIP Badge)
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # 6. Command Azure to update the Identity API
+    - name: Deploy Identity API to Azure
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        resourceGroup: nexus-rg
+        containerAppName: identity-api
+        imageToDeploy: docker.io/${{ secrets.DOCKER_USERNAME }}/identity-api:${{ github.sha }}
+
+    # 7. Command Azure to update the Notification API
+    - name: Deploy Notification API to Azure
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        resourceGroup: nexus-rg
+        containerAppName: notification-api
+        imageToDeploy: docker.io/${{ secrets.DOCKER_USERNAME }}/notification-api:${{ github.sha }}
