@@ -1,5 +1,5 @@
-﻿using Azure.Storage.Blobs;
-using Azure.Storage.Sas;
+﻿using Amazon.S3;
+using Amazon.S3.Model;
 using MediatR;
 using Nexus.Shared.Utilities;
 using Nexus.Video.API.Data;
@@ -9,38 +9,33 @@ namespace Nexus.Video.API.Features.Videos.GenerateUploadUrl
 {
     public class GenerateUploadUrlHandler : IRequestHandler<GenerateUploadUrlCommand, GenerateUploadUrlResponse>
     {
-        private readonly BlobServiceClient _blobServiceClient;
+        private readonly IAmazonS3 _s3Client;
         private readonly SnowFlakeIdGenerator _idGenerator;
         private readonly AppDbContext _dbContext;
-        public GenerateUploadUrlHandler(BlobServiceClient blobServiceClient, SnowFlakeIdGenerator idGenerator, AppDbContext dbContext)
+        public GenerateUploadUrlHandler(IAmazonS3 s3Client, SnowFlakeIdGenerator idGenerator, AppDbContext dbContext)
         {
-            _blobServiceClient = blobServiceClient;
+            _s3Client = s3Client;
             _idGenerator = idGenerator;
             _dbContext = dbContext;
         }
 
         public async Task<GenerateUploadUrlResponse> Handle(GenerateUploadUrlCommand request, CancellationToken cancellationToken)
         {
-            var containerClient = _blobServiceClient.GetBlobContainerClient(VideoConstants.RawVideoContainerName);
-            await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
-
             var videoId = _idGenerator.NextId();
 
             var extension = Path.GetExtension(request.FileName);
-            var blobName = $"{videoId}{extension}";
+            var objectKey = $"{videoId}{extension}";
 
-            var blobClient = containerClient.GetBlobClient(blobName);
-
-            var sasBuilder = new BlobSasBuilder
+            var preSignedUrlRequest = new GetPreSignedUrlRequest
             {
-                BlobContainerName = containerClient.Name,
-                BlobName = blobClient.Name,
-                Resource = "b",
-                ExpiresOn = DateTimeOffset.UtcNow.AddHours(VideoConstants.SasUrlExpirationHours)
+                BucketName = VideoConstants.RawVideoContainerName,
+                Key = objectKey,
+                Verb = HttpVerb.PUT,
+                Expires = DateTime.UtcNow.AddHours(VideoConstants.SasUrlExpirationHours),
+                ContentType = request.ContentType
             };
 
-            sasBuilder.SetPermissions(BlobSasPermissions.Write | BlobSasPermissions.Create);
-            var sasUri = blobClient.GenerateSasUri(sasBuilder);
+            string preSignedUrl = _s3Client.GetPreSignedURL(preSignedUrlRequest);
 
             long dummyUserId = 1234567890; // Replace with actual user ID from authentication context
 
@@ -52,10 +47,10 @@ namespace Nexus.Video.API.Features.Videos.GenerateUploadUrl
                 extension: extension
             );
 
-            _dbContext.Videos.Add(videoRecord);
+            _dbContext.Videos.Add(videoRecord); 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            return new GenerateUploadUrlResponse(videoId.ToString(), sasUri.ToString());
+            return new GenerateUploadUrlResponse(videoId.ToString(), preSignedUrl);
         }
     }
 }

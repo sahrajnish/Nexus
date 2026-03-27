@@ -20,12 +20,12 @@ var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent); // Redis Container stays alive across Aspire resta rts.
 
 // Add Azure Storage and configure it to use the local Azurite emulator
-var storage = builder.AddAzureStorage("nexus-storage")
-    .RunAsEmulator();
+//var storage = builder.AddAzureStorage("nexus-storage")
+//    .RunAsEmulator();
 
-// Define a Blob Storage endpoint specifically for video files
-var rawVideoBlobs = storage.AddBlobs("raw-videos");
-var processingVideoBlob = storage.AddBlobs("processing-videos");
+//// Define a Blob Storage endpoint specifically for video files
+//var rawVideoBlobs = storage.AddBlobs("raw-videos");
+//var processingVideoBlob = storage.AddBlobs("processing-videos");
 
 // Add the Identity API project and reference the IdentityDb, Redis, and RabbitMQ services.
 builder.AddProject<Projects.Nexus_Identity_API>("nexus-identity-api")
@@ -39,8 +39,6 @@ builder.AddProject<Projects.Nexus_Notification_API>("nexus-notification-api")
 
 // Add the Video API project
 builder.AddProject<Projects.Nexus_Video_API>("nexus-video-api")
-    .WithReference(videoDb)
-    .WithReference(rawVideoBlobs)
-    .WithReference(processingVideoBlob);
+    .WithReference(videoDb);
 
 builder.Build().Run();
