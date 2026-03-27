@@ -3,6 +3,7 @@ using Amazon.S3;
 using Carter;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using Nexus.Shared.Utilities;
 using Nexus.Video.API.Constants;
 using Nexus.Video.API.Data;
@@ -50,6 +51,21 @@ else
 builder.Services.AddSingleton<IAmazonS3>(new AmazonS3Client(credentials, s3config));
 
 builder.Services.AddOpenApi();
+
+// Scalar Api Document Transformer -> Force it to https
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info.Title = "Nexus.Video.API | v2 (HTTPS FIXED)";
+
+        document.Servers = new List<OpenApiServer>
+        {
+            new OpenApiServer { Url = "https://video-api.lemonwater-41f24217.australiaeast.azurecontainerapps.io" }
+        };
+        return Task.CompletedTask;
+    });
+});
 
 // MediatR & FluentValidation
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
