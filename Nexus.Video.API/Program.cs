@@ -30,21 +30,21 @@ var s3config = new AmazonS3Config
 };
 
 AWSCredentials credentials;
-//if(builder.Environment.IsDevelopment())
-//{
-//    credentials = new BasicAWSCredentials("localminio", "localminio123");
-//    s3config.ServiceURL = "http://localhost:9000";
 
-//    s3config.ForcePathStyle = true;
-//    s3config.UseHttp = true;
-//}
+// Local Development with MinIO
+credentials = new BasicAWSCredentials("localminio", "localminio123");
+s3config.ServiceURL = "http://localhost:9000";
 
-var accountId = builder.Configuration["CloudflareR2:AccountId"];
-var accessKey = builder.Configuration["CloudflareR2:AccessKey"];
-var secretKey = builder.Configuration["CloudflareR2:SecretKey"];
+s3config.ForcePathStyle = true;
+s3config.UseHttp = true;
 
-credentials = new BasicAWSCredentials(accessKey, secretKey);
-s3config.ServiceURL = $"https://{accountId}.r2.cloudflarestorage.com";
+// Production with Cloudflare R2
+//var accountId = builder.Configuration["CloudflareR2:AccountId"];
+//var accessKey = builder.Configuration["CloudflareR2:AccessKey"];
+//var secretKey = builder.Configuration["CloudflareR2:SecretKey"];
+
+//credentials = new BasicAWSCredentials(accessKey, secretKey);
+//s3config.ServiceURL = $"https://{accountId}.r2.cloudflarestorage.com";
 
 builder.Services.AddSingleton<IAmazonS3>(new AmazonS3Client(credentials, s3config));
 
