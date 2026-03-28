@@ -3,8 +3,9 @@
     public enum VideoStatus
     {
         Uploading = 0,
-        Processing = 1,
-        Published = 2,
-        Failed = 3
+        UploadCompleted = 1,
+        Processing = 2,
+        Published = 3,
+        Failed = 4
     }
 }

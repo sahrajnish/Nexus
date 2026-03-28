@@ -3,6 +3,7 @@ using Amazon.S3.Model;
 using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Nexus.Shared.Contracts.Video;
 using Nexus.Video.API.Data;
 using Nexus.Video.API.Entities;
 using System.Net;
@@ -13,11 +14,13 @@ namespace Nexus.Video.API.Features.Videos.ConfirmUpload
     {
         private readonly AppDbContext _dbContext;
         private readonly IAmazonS3 _s3Client;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public ConfirmUploadHandler(AppDbContext dbContext, IAmazonS3 s3Client)
+        public ConfirmUploadHandler(AppDbContext dbContext, IAmazonS3 s3Client, IPublishEndpoint publishEndpoint)
         {
             _dbContext = dbContext;
             _s3Client = s3Client;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<bool> Handle(ConfirmUploadCommand request, CancellationToken cancellationToken)
@@ -87,6 +90,25 @@ namespace Nexus.Video.API.Features.Videos.ConfirmUpload
                 return false;
             }
 
+            // Mark the video as "UploadCompleted".
+            video.MarkAsUploadCompleted();
+
+            // Publish a message to the queue so the background worker knows to start processing this video.
+            var message = new VideoUploadConfirmedEvent
+            {
+                VideoId = video.Id,
+                UserId = video.UserId,
+                OriginalFileName = video.Title,
+                ContentType = video.ContentType,
+                StoragePath = $"{VideoConstants.ProcessingVideoContainerName}/{objectKey}"
+            };
+            await _publishEndpoint.Publish(message, cancellationToken);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Move this to Worker Service: The background worker can handle copying the file and deleting the original after processing is done.
+            // This way, we don't have to wait for the copy to complete before responding to the user.
+
             // Copy video file from raw-videos to processing-videos.
             var copyRequest = new CopyObjectRequest
             {
@@ -101,10 +123,6 @@ namespace Nexus.Video.API.Features.Videos.ConfirmUpload
 
             // Delete the original file from raw-videos storage
             await _s3Client.DeleteObjectAsync(VideoConstants.RawVideoContainerName, objectKey, cancellationToken);
-
-            // Mark as Processing in Db
-            video.MarkAsProcessing();
-            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return true;
         }

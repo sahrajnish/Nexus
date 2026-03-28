@@ -28,6 +28,12 @@
             };
         }
 
+        public void MarkAsUploadCompleted()
+        {
+            Status = VideoStatus.UploadCompleted;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public void MarkAsProcessing()
         {
             Status = VideoStatus.Processing;

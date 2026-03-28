@@ -39,6 +39,7 @@ builder.AddProject<Projects.Nexus_Notification_API>("nexus-notification-api")
 
 // Add the Video API project
 builder.AddProject<Projects.Nexus_Video_API>("nexus-video-api")
-    .WithReference(videoDb);
+    .WithReference(videoDb)
+    .WithReference(rabbit);
 
 builder.Build().Run();

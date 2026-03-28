@@ -7,6 +7,7 @@ using Microsoft.OpenApi;
 using Nexus.Shared.Utilities;
 using Nexus.Video.API.Constants;
 using Nexus.Video.API.Data;
+using Nexus.Video.API.Infrastructure.Extension;
 using Scalar.AspNetCore;
 using System.Reflection;
 
@@ -21,6 +22,9 @@ builder.AddNpgsqlDbContext<AppDbContext>("VideoDb", settings =>
 {
     settings.DisableRetry = false;
 });
+
+// Add RabbitMQ MassTransit
+builder.Services.AddMessageBroker(builder.Configuration);
 
 var s3config = new AmazonS3Config
 {
