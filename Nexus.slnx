@@ -8,4 +8,5 @@
   <Project Path="Nexus.ServiceDefaults/Nexus.ServiceDefaults.csproj" />
   <Project Path="Nexus.Shared/Nexus.Shared.csproj" />
   <Project Path="Nexus.Video.API/Nexus.Video.API.csproj" />
+  <Project Path="Nexus.Worker.API/Nexus.Worker.API.csproj" />
 </Solution>

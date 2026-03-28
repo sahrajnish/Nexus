@@ -42,4 +42,7 @@ builder.AddProject<Projects.Nexus_Video_API>("nexus-video-api")
     .WithReference(videoDb)
     .WithReference(rabbit);
 
+builder.AddProject<Projects.Nexus_Worker_API>("nexus-worker-api")
+    .WithReference(rabbit);
+
 builder.Build().Run();
